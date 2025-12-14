@@ -62,3 +62,19 @@ You should see `Hello from <hostname>`.
 - Demonstrates core VPC design (public/private subnets, IGW, NAT) and least-privilege security groups.
 - Shows ALB + ASG pattern for resilient web services with health checks and automated scaling.
 - Uses IAM roles for instances and Terraform-managed infrastructure—common topics for certs and entry-level cloud roles.
+
+## 🛠 Instance Refreshes & Operational Learnings
+This stack supports rolling updates via ASG instance refreshes. What happens:
+- Launches new EC2 instances from the current launch template, waits for EC2 + ALB health checks, then terminates old nodes only after healthy replacements exist while enforcing minimum healthy capacity.
+- Behavior is health-gated, not time-based; if replacements fail ALB health, the refresh stalls but traffic still flows to healthy instances.
+- Terraform owns infrastructure state, but ASG/ALB own lifecycle and routing once resources exist.
+
+Troubleshooting performed (real run):
+- A replacement instance failed ALB health checks (app startup/port bind), stalling the refresh at ~50–100%.
+- ASG refused to drop the last healthy instance, preserving availability.
+- Fix: identify the unhealthy instance blocking the refresh, terminate it to force a new replacement, ensure user data allows the app to bind to port 80, and rerun/let refresh complete.
+
+What this demonstrates:
+- Clear separation of concerns: IaC vs. lifecycle management vs. traffic routing.
+- Safe rollout guarantees enforced by AWS health checks.
+- Practical steps to diagnose and unblock stalled deployments without sacrificing availability—great signal for junior cloud/DevOps interviews.
