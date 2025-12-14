@@ -1,6 +1,6 @@
 # AWS EC2 Auto Scaling Group behind an Application Load Balancer
 
-Production-style Terraform showing a VPC-based, scaled EC2 Flask app behind an ALB.
+Production-style Terraform implementing a VPC-based, auto-scaled EC2 Flask service behind an Application Load Balancer.
 
 ## Architecture
 - VPC `10.0.0.0/16` with 2 public + 2 private subnets across AZs
@@ -26,7 +26,7 @@ Internet
 ```
 
 ### Traffic Flow
-Internet → Application Load Balancer → Target Group → Auto Scaling Group → EC2 instances (Flask app)  
+Internet → Application Load Balancer → Target Group → EC2 instances (managed by an Auto Scaling Group running the Flask app)  
 Health checks hit `/` on port 80; unhealthy instances are replaced automatically.
 
 ## Why these choices
@@ -75,6 +75,8 @@ Troubleshooting performed (real run):
 - Fix: identify the unhealthy instance blocking the refresh, terminate it to force a new replacement, ensure user data allows the app to bind to port 80, and rerun/let refresh complete.
 
 What this demonstrates:
-- Clear separation of concerns: IaC vs. lifecycle management vs. traffic routing.
-- Safe rollout guarantees enforced by AWS health checks.
-- Practical steps to diagnose and unblock stalled deployments without sacrificing availability—great signal for junior cloud/DevOps interviews.
+- Operational separation of concerns: IaC (Terraform), instance lifecycle (ASG), and traffic routing (ALB).
+- Health-gated deployments: availability preserved by refusing unsafe progress.
+- Hands-on incident response: diagnosing and resolving a stalled rollout without service interruption—great signal for junior cloud/DevOps interviews.
+
+Next step: extend this stack with a CI/CD pipeline that triggers instance refreshes on application changes, and compare this rollout model with Kubernetes RollingUpdates.
